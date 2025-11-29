@@ -1,0 +1,18 @@
+{
+    "Seq.": "Sequence number representing the order of presidents.",
+    "ID": "Unique identifier for each president.",
+    "President": "Name of the U.S. president.",
+    "President Name": "Full name of the president.",
+    "AC": "Achievement count or notable accomplishments during the presidency.",
+    "WR": "War record or military leadership evaluations.",
+    "EAp": "Economic approval rating or policy effectiveness.",
+    "OA": "Overall approval rating from historical assessments.",
+    "Im": "Impeachment proceedings or related controversies.",
+    "DA": "Domestic affairs score, measuring internal policy success.",
+    "Int": "Intellectual influence or diplomatic strategy ratings.",
+    "EAb": "Executive ability in governance and administrative efficiency.",
+    "FPA": "Foreign policy achievements or international relations impact.",
+    "LA": "Legislative achievements or lawmaking effectiveness.",
+    "var": "Indicators for evaluating the performance of the president.",
+    "value": "The corresponding value of the indicator in var column."
+}

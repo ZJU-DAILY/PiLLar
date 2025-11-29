@@ -1,0 +1,58 @@
+{
+    "age": [
+        "age"
+    ],
+    "workclass": [
+        "workclass"
+    ],
+    "fnlwgt": [
+        "fnlwgt"
+    ],
+    "education": [
+        "EducationLevel"
+    ],
+    "education.num": [
+        "education.num"
+    ],
+    "marital.status": [
+        "MartialStatus"
+    ],
+    "occupation": [
+        "occupation"
+    ],
+    "relationship": [
+        "relationship"
+    ],
+    "race": [
+        "race"
+    ],
+    "sex": [
+        "gender"
+    ],
+    "2023.capital.gain": [
+        "2023.capital.gain"
+    ],
+    "2023.capital.loss": [
+        "2023.capital.loss"
+    ],
+    "hours.per.week": [],
+    "native.country": [
+        "native.country"
+    ],
+    "income": [
+        "<=50K",
+        ">50K"
+    ],
+    "2024.capital.gain": [
+        "2024.capital.gain"
+    ],
+    "2024.capital.loss": [
+        "2024.capital.loss"
+    ],
+    "2025.capital.gain": [
+        "2025.capital.gain"
+    ],
+    "2025.capital.loss": [
+        "2025.capital.loss"
+    ]
+}

@@ -1,0 +1,44 @@
+{
+    "Div": [
+        "Div"
+    ],
+    "Date": [
+        "Date"
+    ],
+    "HomeTeam": [
+        "HomeTeam"
+    ],
+    "AwayTeam": [
+        "AwayTeam"
+    ],
+    "FTHG": [
+        "FTHG"
+    ],
+    "FTAG": [
+        "FTAG"
+    ],
+    "FTR": [
+        "FTR"
+    ],
+    "HTHG": [
+        "HTHG"
+    ],
+    "HTAG": [
+        "HTAG"
+    ],
+    "HTR": [
+        "HTR"
+    ],
+    "Referee": [
+        "Referee"
+    ],
+    "Statistic": [
+        "HS",
+        "AS",
+        "HST",
+        "AST",
+        "HC",
+        "AC"
+    ],
+    "Count": []
+}

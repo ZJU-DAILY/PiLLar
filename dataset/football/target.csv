@@ -1,0 +1,21 @@
+Div,Date,HomeTeam,AwayTeam,FTHG,FTAG,FTR,HTHG,HTAG,HTR,Referee,Statistic,Count
+E0,16/04/11,Birmingham,Sunderland,2,0,H,1,0,H,Referee_2,*S,15
+E0,06/02/11,West Ham,Birmingham,0,1,A,0,0,D,Referee_10,*C,5
+E0,22/05/11,Aston Villa,Liverpool,1,0,H,1,0,H,Referee_8,**T,4
+E0,12/02/11,Man United,Man City,2,1,H,1,0,H,Referee_6,*S,13
+E0,16/04/11,Everton,Blackburn,2,0,H,0,0,D,Referee_14,**T,2
+E0,22/01/11,Fulham,Stoke,2,0,H,1,0,H,Referee_3,*S,9
+E0,05/03/11,Arsenal,Sunderland,0,0,D,0,0,D,Referee_5,*C,5
+E0,05/02/11,Newcastle,Arsenal,4,4,D,0,4,A,Referee_2,*C,12
+E0,27/11/10,Fulham,Birmingham,1,1,D,0,1,A,Referee_16,*S,7
+E0,02/04/11,Newcastle,Wolves,4,1,H,2,0,H,Referee_1,*S,13
+E0,10/05/11,Man City,Tottenham,1,0,H,1,0,H,Referee_1,*C,2
+E0,06/11/10,Blackpool,Everton,2,2,D,1,1,D,Referee_6,*C,3
+E0,12/12/10,Bolton,Blackburn,2,1,H,0,0,D,Referee_4,*C,3
+E0,23/08/10,Man City,Liverpool,3,0,H,1,0,H,Referee_2,**T,3
+E0,18/12/10,Sunderland,Bolton,1,0,H,1,0,H,Referee_10,*C,2
+E0,10/11/10,Wolves,Arsenal,0,2,A,0,1,A,Referee_7,*S,12
+E0,30/10/10,Man United,Tottenham,2,0,H,1,0,H,Referee_4,*S,1
+E0,22/01/11,Blackpool,Sunderland,1,2,A,0,2,A,Referee_13,*S,11
+E0,12/02/11,Blackburn,Newcastle,0,0,D,0,0,D,Referee_3,*S,4
+E0,02/10/10,Stoke,Blackburn,1,0,H,0,0,D,Referee_16,**T,4

@@ -1,0 +1,21 @@
+Seq.,President Name,var,value
+23,Benjamin Harrison,**p,25
+12,Zachary Taylor,**p,24
+38,Gerald Ford,*A,10
+26,Theodore Roosevelt,*A,9
+19,Rutherford B. Hayes,**p,25
+19,Rutherford B. Hayes,*A,8
+10,John Tyler,**p,24
+8,Martin Van Buren,**b,31
+32,Franklin D. Roosevelt,*A,8
+13,Millard Fillmore,**b,30
+33,Harry S. Truman,**A,27
+27,William Howard Taft,**A,28
+44,Barack Obama,*A,9
+32,Franklin D. Roosevelt,**p,25
+13,Millard Fillmore,**A,28
+22,Grover Cleveland,**b,30
+13,Millard Fillmore,*A,10
+23,Benjamin Harrison,**A,26
+20,James A. Garfield,**A,28
+12,Zachary Taylor,**A,27

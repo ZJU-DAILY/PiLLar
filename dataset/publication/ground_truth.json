@@ -1,0 +1,21 @@
+{
+    "Title": [
+        "Title"
+    ],
+    "Type": [
+        "Type"
+    ],
+    "Developer(s)": [
+        "Developer(s)"
+    ],
+    "Publisher(s)": [
+        "Publisher(s)"
+    ],
+    "var": [
+        "Regions released/Release date (NTSC)(Japan)",
+        "Regions released/Release date (NTSC)(North America)",
+        "Regions released/Release date (PAL)(Australasia)",
+        "Regions released/Release date (PAL)(Europe)"
+    ],
+    "value": []
+}
