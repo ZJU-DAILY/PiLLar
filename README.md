@@ -12,7 +12,7 @@ PiLLar/
 ├── README.md
 ├── requirements.txt                  # Python dependencies
 ├── dataset/                          # All datasets used in experiments
-│   ├── Adult/
+│   ├── adult/
 │   │   ├── source.csv                # Pivot table
 │   │   ├── target.csv                # Standard table
 │   │   ├── column_explanations.json  # Column descriptions
