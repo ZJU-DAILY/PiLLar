@@ -29,7 +29,7 @@ PiLLar/
 ```
 
 ## Benchmark Datasets
-This repository includes the **PTBench** benchmark introduced in the paper — the first dataset designed for schema matching with pivot tables.
+This repository includes the **PTBench** benchmark introduced in the paper — the first dataset designed for pivot schema matching.
 | Dataset     | Type              | # Attr. (Pivot → Standard) |
 | ----------- | ----------------- | -------------------------- |
 | Adult       | Census            | 19 → 19                    |
