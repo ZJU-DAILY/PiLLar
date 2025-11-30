@@ -2,7 +2,7 @@
 
 ![framework](./framework.png)
 
-**PiLLar** is the first framework designed specifically for *pivot schema matching* — aligning pivot tables with standard relational tables using an LLM-driven Monte-Carlo Tree Search strategy with theoretical convergence guarantees.
+**PiLLar** is the first framework designed specifically for *pivot schema matching* — aligning pivot tables with standard relational tables using an LLM-driven Monte-Carlo Tree Search with theoretical convergence guarantees.
 
 The framework achieves **training-free adaptation**, high accuracy with **minimal anonymized sample data**, and introduces the first benchmark dataset for pivot schema matching tasks.
 
