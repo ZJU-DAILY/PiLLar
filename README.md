@@ -2,9 +2,9 @@
 
 ![framework](./framework.png)
 
-**PiLLar** is the first framework designed specifically for *pivot schema matching* — aligning pivot tables with standard relational tables using an LLM-driven Monte-Carlo Tree Search with theoretical convergence guarantees.
+**PiLLar** is the first framework designed specifically for *matching for pivot table schema* — aligning pivot tables with standard relational tables using an LLM-driven Monte-Carlo Tree Search with theoretical convergence guarantees.
 
-The framework achieves **training-free adaptation**, high accuracy with **minimal anonymized sample data**, and introduces the first benchmark dataset for pivot schema matching tasks.
+The framework achieves **training-free adaptation**, high accuracy with **minimal anonymized sample data**, and introduces the first benchmark dataset for matching for pivot table schema tasks.
 
 ## Repository Structure
 ```
@@ -29,7 +29,7 @@ PiLLar/
 ```
 
 ## Benchmark Datasets
-This repository includes the **PTBench** benchmark introduced in the paper — the first dataset designed for pivot schema matching.
+This repository includes the **PTBench** benchmark introduced in the paper — the first dataset designed for matching for pivot table schema tasks.
 | Dataset     | Type              | # Attr. (Pivot → Standard) |
 | ----------- | ----------------- | -------------------------- |
 | Adult       | Census            | 19 → 19                    |
