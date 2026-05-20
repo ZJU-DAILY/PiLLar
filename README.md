@@ -17,12 +17,12 @@ PiLLar/
 │   │   ├── target.csv                # Standard table
 │   │   ├── column_explanations.json  # Column descriptions
 │   │   └── ground_truth.json         # Ground truth mapping
-│   └── ...                           # Football, President and Publication datasets
+│   └── ...                           # Football, President and Gene datasets
 └── src/                              # Source code of the PiLLar framework
     ├── __init__.py
     ├── pillar_globals.py             # Global configuration, shared state, models, caches
     ├── logging_utils.py              # Simple logging helpers
-    ├── llm_utils.py                  # OpenAI/LLM client wrappers
+    ├── llm_utils.py                  # LLM client wrappers
     ├── similarity.py                 # Similarity metrics & reward computation
     ├── mcts.py                       # Bounded-stochastic MCTS
     └── main.py                       # Command-line entry point for running PiLLar
