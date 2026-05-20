@@ -1,0 +1,312 @@
+{
+    "SAMPID": [
+        "SAMPID"
+    ],
+    "SMATSSCR": [
+        "SMATSSCR"
+    ],
+    "SMCENTER": [
+        "SMCENTER"
+    ],
+    "SMPTHNTS": [
+        "SMPTHNTS"
+    ],
+    "SMRIN": [
+        "SMRIN"
+    ],
+    "SMTS": [
+        "SMTS"
+    ],
+    "SMTSD": [
+        "SMTSD"
+    ],
+    "SMUBRID": [
+        "SMUBRID"
+    ],
+    "SMTSISCH": [
+        "SMTSISCH"
+    ],
+    "SMTSPAX": [
+        "SMTSPAX"
+    ],
+    "SMNABTCH": [
+        "SMNABTCH"
+    ],
+    "SMNABTCHT": [
+        "SMNABTCHT"
+    ],
+    "SMNABTCHD": [
+        "SMNABTCHD"
+    ],
+    "SMGEBTCH": [
+        "SMGEBTCH"
+    ],
+    "SMGEBTCHD": [
+        "SMGEBTCHD"
+    ],
+    "SMGEBTCHT": [
+        "SMGEBTCHT"
+    ],
+    "ANALYTE_TYPE": [
+        "ANALYTE_TYPE"
+    ],
+    "SMAFRZE": [
+        "SMAFRZE"
+    ],
+    "SMGTC": [
+        "SMGTC"
+    ],
+    "SMRDTTL": [
+        "SMRDTTL"
+    ],
+    "SMALTTL": [
+        "SMALTTL"
+    ],
+    "SMALTALG": [
+        "SMALTALG"
+    ],
+    "SMSUPALG": [
+        "SMSUPALG"
+    ],
+    "SMRDLGTH": [
+        "SMRDLGTH"
+    ],
+    "SMVQCFL": [
+        "SMVQCFL"
+    ],
+    "SMLMAPQ": [
+        "SMLMAPQ"
+    ],
+    "SMUMPRD": [
+        "SMUMPRD"
+    ],
+    "SMUNPDRD": [
+        "SMUNPDRD"
+    ],
+    "SMMPPD": [
+        "SMMPPD"
+    ],
+    "SMMPPDUN": [
+        "SMMPPDUN"
+    ],
+    "SMMPDP": [
+        "SMMPDP"
+    ],
+    "SMMPPDXG": [
+        "SMMPPDXG"
+    ],
+    "SMMPDPXG": [
+        "SMMPDPXG"
+    ],
+    "SMCHMRD": [
+        "SMCHMRD"
+    ],
+    "SMMPPDPR": [
+        "SMMPPDPR"
+    ],
+    "SMMPHQRD": [
+        "SMMPHQRD"
+    ],
+    "SMMPLQRD": [
+        "SMMPLQRD"
+    ],
+    "SMSPLTRT": [
+        "SMSPLTRT"
+    ],
+    "SME1MPRD": [
+        "SME1MPRD"
+    ],
+    "SME2MPRD": [
+        "SME2MPRD"
+    ],
+    "SME1MMB": [
+        "SME1MMB"
+    ],
+    "SME2MMB": [
+        "SME2MMB"
+    ],
+    "SME1TTLB": [
+        "SME1TTLB"
+    ],
+    "SME2TTLB": [
+        "SME2TTLB"
+    ],
+    "SMTTLMM": [
+        "SMTTLMM"
+    ],
+    "SMTTLB": [
+        "SMTTLB"
+    ],
+    "SMESTLBS": [
+        "SMESTLBS"
+    ],
+    "SMEXNCRD": [
+        "SMEXNCRD"
+    ],
+    "SMNTRNRD": [
+        "SMNTRNRD"
+    ],
+    "SMNTRARD": [
+        "SMNTRARD"
+    ],
+    "SMNTERRD": [
+        "SMNTERRD"
+    ],
+    "SMAMBRD": [
+        "SMAMBRD"
+    ],
+    "SMNTEXC": [
+        "SMNTEXC"
+    ],
+    "SME1SNSE": [
+        "SME1SNSE"
+    ],
+    "SME2SNSE": [
+        "SME2SNSE"
+    ],
+    "SME1ANTI": [
+        "SME1ANTI"
+    ],
+    "SME2ANTI": [
+        "SME2ANTI"
+    ],
+    "SMGNSDTC": [
+        "SMGNSDTC"
+    ],
+    "SMRRNARD": [
+        "SMRRNARD"
+    ],
+    "SMRRNART": [
+        "SMRRNART"
+    ],
+    "SMMFLGTH": [
+        "SMMFLGTH"
+    ],
+    "SMSFLGTH": [
+        "SMSFLGTH"
+    ],
+    "SMMDFLGTH": [
+        "SMMDFLGTH"
+    ],
+    "SMSMFLGTH": [
+        "SMSMFLGTH"
+    ],
+    "SMFGCMN": [
+        "SMFGCMN"
+    ],
+    "SMFGCSD": [
+        "SMFGCSD"
+    ],
+    "SMFGCSK": [
+        "SMFGCSK"
+    ],
+    "SMFGCKT": [
+        "SMFGCKT"
+    ],
+    "SM3PBMN": [
+        "SM3PBMN"
+    ],
+    "SM3PBSD": [
+        "SM3PBSD"
+    ],
+    "SM3PBMD": [
+        "SM3PBMD"
+    ],
+    "SM3PB25P": [
+        "SM3PB25P"
+    ],
+    "SM3PB75P": [
+        "SM3PB75P"
+    ],
+    "SM3PBSDM": [
+        "SM3PBSDM"
+    ],
+    "SM3PBGN": [
+        "SM3PBGN"
+    ],
+    "SMMDMNCV": [
+        "SMMDMNCV"
+    ],
+    "SMMDCVSD": [
+        "SMMDCVSD"
+    ],
+    "SMMDCVCV": [
+        "SMMDCVCV"
+    ],
+    "SMEXCVMD": [
+        "SMEXCVMD"
+    ],
+    "SMEXCVMAD": [
+        "SMEXCVMAD"
+    ],
+    "SMMNCV": [
+        "SMMNCV"
+    ],
+    "SMUVCRD": [
+        "SMUVCRD"
+    ],
+    "SMUVCRT": [
+        "SMUVCRT"
+    ],
+    "SMSHRTRD": [
+        "SMSHRTRD"
+    ],
+    "SMSHRTRT": [
+        "SMSHRTRT"
+    ],
+    "SMSMRDHQ": [
+        "SMSMRDHQ"
+    ],
+    "SMSMRTHQ": [
+        "SMSMRTHQ"
+    ],
+    "SMPRERDHQ": [
+        "SMPRERDHQ"
+    ],
+    "SMPRERTHQ": [
+        "SMPRERTHQ"
+    ],
+    "SMSMGNDT": [
+        "SMSMGNDT"
+    ],
+    "SMPREGNDT": [
+        "SMPREGNDT"
+    ],
+    "SMRDLNMN": [
+        "SMRDLNMN"
+    ],
+    "SMRDLNMD": [
+        "SMRDLNMD"
+    ],
+    "SMRDLNSD": [
+        "SMRDLNSD"
+    ],
+    "var": [
+        "SMMAPRT",
+        "SMUNMPRT",
+        "SMDPMPRT",
+        "SMDPRTXG",
+        "SMCHMRT",
+        "SMMPHQRT",
+        "SME1MPRT",
+        "SME2MPRT",
+        "SME1MMRT",
+        "SME2MMRT",
+        "SMBSMMRT",
+        "SMEXNCRT",
+        "SMEXPEFF",
+        "SMNTRNRT",
+        "SMNTRART",
+        "SMNTERRT",
+        "SMAMBRT",
+        "SMDSCRT",
+        "SMEXNCRTHQ",
+        "SMNTRNRTHQ",
+        "SMNTRARTHQ",
+        "SMNTERRTHQ",
+        "SMAMBRTHQ",
+        "SME1PCTS",
+        "SME2PCTS"
+    ],
+    "value": []
+}

@@ -6,6 +6,8 @@ from openai import RateLimitError, BadRequestError, APIError
 from . import pillar_globals as g
 from .logging_utils import print_log
 
+class ErrorPromptTooLong(Exception):
+    pass
 
 def split_response(response) -> Tuple[str, str, float]:
     reasoning_content = ""
@@ -32,8 +34,9 @@ def completion_create(
     extra_body: Dict[str, Any] | None = None,
     Stream: bool = False,
 ):
-    get_response = False
-    while not get_response:
+    print_log("Sending request to model " + model + " with messages: " + str(messages))
+    retry_count = 0
+    while retry_count < 3:
         try:
             response = g.client.chat.completions.create(
                 model=model,
@@ -41,16 +44,35 @@ def completion_create(
                 extra_body=extra_body,
                 stream=Stream,
             )
-            get_response = True
-        except RateLimitError:
-            print_log("Rate limit exceeded, waiting for 10 seconds...")
-            time.sleep(10)
-            g.total_time_wasted += 10
+            retry_count = 3
+        except RateLimitError as e:
+            print_log(f"Rate limit exceeded: {e}")
+            print_log("waiting for 60 seconds...")
+            time.sleep(60)
+            g.total_time_wasted += 60
+            retry_count += 1
         except BadRequestError as e:
             print_log(f"Bad request error: {e}")
-            print_log("Retrying...")
+            print_log("Prompt: " + str(messages))
+            # print_log("Waiting for user to fix the error...")
+            if "Range of input length" in str(e):
+                raise ErrorPromptTooLong("The prompt is too long to be processed.")
+            else:
+                input("Press Enter to retry...\n")
+                print_log("Retrying...")
+            retry_count += 1
         except APIError as e:
             print_log(f"API error: {e}")
             print_log("Retrying...")
-
-    return split_response(response)
+            retry_count += 1
+            
+    try:
+        reasoning_content, answer_content, created_time = split_response(response)
+        return reasoning_content, answer_content, created_time
+    except Exception as e:
+        print_log(f"Bad request error during response splitting: {e}")
+        print_log("Prompt: " + str(messages))
+        if "Range of input length" in str(e):
+            raise ErrorPromptTooLong("The prompt is too long to be processed.")
+        else:
+            return "", "", time.time()

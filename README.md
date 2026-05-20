@@ -1,4 +1,4 @@
-# PiLLar: Pivot Schema Matching via LLM-guided Monte-Carlo Tree Search
+# PiLLar: Matching for Pivot Table Schema via LLM-guided Monte-Carlo Tree Search
 
 ![framework](./framework.png)
 
@@ -35,7 +35,7 @@ This repository includes the **PTBench** benchmark introduced in the paper — t
 | Adult       | Census            | 19 → 19                    |
 | Football    | Sports Analytics  | 23 → 13                    |
 | President   | Evaluation Metrics| 12 → 4                     |
-| Publication | Software Metadata | 8 → 6                      |
+| Gene        | Biological Data   | 119 → 96                   |
 
 ## Installation
 ```bash

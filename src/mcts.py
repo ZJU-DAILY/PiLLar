@@ -9,7 +9,7 @@ import pandas as pd
 
 from . import pillar_globals as g
 from .logging_utils import print_log
-from .llm_utils import completion_create
+from .llm_utils import completion_create, ErrorPromptTooLong
 from .similarity import similarity_score
 
 
@@ -49,6 +49,10 @@ prompt_unpivot = "### Identify the columns that can be unpivoted in a list of co
 ### Description:\n#\n{description}#\n\
 ### Target column names for reference:\n#\n{target_attributes}\n"
 
+prompt_unpivot_without_description = "### Identify the columns that can be unpivoted in a list of column names and with no explanation.\n\
+### Source column names:\n#\n{attributes}\n#\n\
+### Target column names for reference:\n#\n{target_attributes}\n"
+
 prompt_feedback = "### Evaluate the columns selected to be unpivoted from the source table. The selection aims to transfer the \
 source table to the target table. You should focus on the transformation between the source and target table structure rather than \
 the meaning of unpivot. The provided sample data may have been anonymised. Analyze this answer strictly and critically, point out \
@@ -60,6 +64,28 @@ attributes in the subset. Remember the attributes should be selected from the so
 ### Target column names for reference:\n#\n{target_attributes}\n#\n\
 ### Sample data from source table:\n#\n{source_sample_data}#\n\
 ### Sample data from target table:\n#\n{target_sample_data}#\n\
+### Selected columns for unpivot:\n#\n# {unpivot_subset}\n#\n"
+
+prompt_feedback_without_description = "### Evaluate the columns selected to be unpivoted from the source table. The selection aims to transfer the \
+source table to the target table. You should focus on the transformation between the source and target table structure rather than \
+the meaning of unpivot. The provided sample data may have been anonymised. Analyze this answer strictly and critically, point out \
+every flaw for ervery possible imperfection about the selection. You only need to evaluate the selection of unpivot subset itself. \
+Note that the selected subset is under loose limits, your task is to reduce the size of the subset if there exists redundant \
+attributes in the subset. Remember the attributes should be selected from the source attributes, do not use names that do not exist.\n\
+### Source column names:\n#\n{attributes}\n#\n\
+### Target column names for reference:\n#\n{target_attributes}\n#\n\
+### Sample data from source table:\n#\n{source_sample_data}#\n\
+### Sample data from target table:\n#\n{target_sample_data}#\n\
+### Selected columns for unpivot:\n#\n# {unpivot_subset}\n#\n"
+
+prompt_feedback_without_sample_value = "### Evaluate the columns selected to be unpivoted from the source table. The selection aims to transfer the \
+source table to the target table. You should focus on the transformation between the source and target table structure rather than \
+the meaning of unpivot. The provided sample data may have been anonymised. Analyze this answer strictly and critically, point out \
+every flaw for ervery possible imperfection about the selection. You only need to evaluate the selection of unpivot subset itself. \
+Note that the selected subset is under loose limits, your task is to reduce the size of the subset if there exists redundant \
+attributes in the subset. Remember the attributes should be selected from the source attributes, do not use names that do not exist.\n\
+### Source column names:\n#\n{attributes}\n#\n\
+### Target column names for reference:\n#\n{target_attributes}\n#\n\
 ### Selected columns for unpivot:\n#\n# {unpivot_subset}\n#\n"
 
 prompt_refine = "### Refine your selection based on the feedback. If the feedback indicates that the selection is ideal, then you can remain \
@@ -105,23 +131,31 @@ def traverse(node: Node) -> Node:
         node = best_utc(node)
     return node
 
+prompt_too_long = False
 
-def self_refine(node: Node) -> Optional[Node]:
+def self_refine(node: Node, without_description: bool) -> Optional[Node]:
+    global prompt_too_long
+
     unpivot_subset = [g.source_attributes[i] for i in node.C]
     prompt_source = "# " + "\n# ".join(g.source_attributes)
     prompt_target = "# " + "\n# ".join(g.target_attributes)
-
-    prompt_description = ""
-    for attribute in g.source_attributes:
-        prompt_description += (
-            "# " + attribute + ": " + g.column_explanations[attribute] + "\n"
-        )
 
     source_attributes_unpivot = [
         g.source_attributes[i]
         for i in range(len(g.source_attributes))
         if i not in node.C
     ]
+
+    prompt_source_sample = ""
+    for column in source_attributes_unpivot:
+        prompt_source_sample += (
+            "# "
+            + column
+            + ": "
+            + "["
+            + ", ".join([str(x) for x in g.df_source[column].values])
+            + "]\n"
+        )
 
     df_tmp = g.df_source.copy()
     if len(node.C) != 0:
@@ -133,8 +167,8 @@ def self_refine(node: Node) -> Optional[Node]:
             value_name="generated_value",
         )
 
-    prompt_source_sample = ""
-    for column in df_tmp.columns:
+    # prompt_source_sample = ""
+    for column in ["generated_attributes", "generated_value"]:
         prompt_source_sample += (
             "# "
             + column
@@ -155,14 +189,36 @@ def self_refine(node: Node) -> Optional[Node]:
             + "]\n"
         )
 
-    prompt = prompt_feedback.format(
-        attributes=prompt_source,
-        description=prompt_description,
-        source_sample_data=prompt_source_sample,
-        target_sample_data=prompt_target_sample,
-        unpivot_subset=unpivot_subset,
-        target_attributes=prompt_target,
-    )
+    if not without_description:
+        prompt_description = ""
+        for attribute in g.source_attributes:
+            prompt_description += (
+                "# " + attribute + ": " + g.column_explanations[attribute] + "\n"
+            )
+
+        prompt = prompt_feedback.format(
+            attributes=prompt_source,
+            description=prompt_description,
+            source_sample_data=prompt_source_sample,
+            target_sample_data=prompt_target_sample,
+            unpivot_subset=unpivot_subset,
+            target_attributes=prompt_target,
+        )
+    else:
+        if prompt_too_long:
+            prompt = prompt_feedback_without_sample_value.format(
+                attributes=prompt_source,
+                unpivot_subset=unpivot_subset,
+                target_attributes=prompt_target,
+            )
+        else:
+            prompt = prompt_feedback_without_description.format(
+                attributes=prompt_source,
+                source_sample_data=prompt_source_sample,
+                target_sample_data=prompt_target_sample,
+                unpivot_subset=unpivot_subset,
+                target_attributes=prompt_target,
+            )
 
     messages = [
         {
@@ -174,26 +230,59 @@ def self_refine(node: Node) -> Optional[Node]:
     ]
 
     query_time = time.time()
-    _, response, create_time = completion_create(
-        model=g.args.model,
-        messages=messages,
-        extra_body={"enable_thinking": False},
-        Stream=True,
-    )
+    try:
+        _, response, create_time = completion_create(
+            model=g.args.model,
+            messages=messages,
+            extra_body={"enable_thinking": False},
+            Stream=True,
+        )
+    except ErrorPromptTooLong:
+        prompt_too_long = True
+        prompt = prompt_feedback_without_sample_value.format(
+            attributes=prompt_source,
+            unpivot_subset=unpivot_subset,
+            target_attributes=prompt_target,
+        )
+        messages = [
+            {
+                "role": "system",
+                "content": "You are now an expert in data governance and schema matching, "
+                "and provides feedback on the quality of unpivot detection.",
+            },
+            {"role": "user", "content": prompt},
+        ]
+        _, response, create_time = completion_create(
+            model=g.args.model,
+            messages=messages,
+            extra_body={"enable_thinking": False},
+            Stream=True,
+        )
     feedback = response
     g.total_time_wasted += create_time - query_time
 
     messages = predefined_messages.copy()
-    messages.append(
-        {
-            "role": "user",
-            "content": prompt_unpivot.format(
-                attributes=prompt_source,
-                description=prompt_description,
-                target_attributes=prompt_target,
-            ),
-        }
-    )
+    if not without_description:
+        messages.append(
+            {
+                "role": "user",
+                "content": prompt_unpivot.format(
+                    attributes=prompt_source,
+                    description=prompt_description,
+                    target_attributes=prompt_target,
+                ),
+            }
+        )
+    else:
+        messages.append(
+            {
+                "role": "user",
+                "content": prompt_unpivot_without_description.format(
+                    attributes=prompt_source,
+                    target_attributes=prompt_target,
+                ),
+            }
+        )
     response_init = {"unpivot_columns": unpivot_subset}
     messages.append(
         {
@@ -208,8 +297,8 @@ def self_refine(node: Node) -> Optional[Node]:
         }
     )
 
-    get_response = False
-    while not get_response:
+    retry_count = 0
+    while retry_count < 3:
         query_time = time.time()
         _, response, create_time = completion_create(
             model=g.args.model,
@@ -217,16 +306,22 @@ def self_refine(node: Node) -> Optional[Node]:
             extra_body={"enable_thinking": False},
             Stream=True,
         )
-        get_response = True
         g.total_time_wasted += create_time - query_time
         try:
             answer = json.loads(response)
+            unpivot_columns = answer["unpivot_columns"]
+            retry_count = 3
         except json.JSONDecodeError:
             print_log(
                 "Error: Invalid JSON format in response. Response content: " + response
             )
             print_log("Retrying...")
-            get_response = False
+            retry_count += 1
+            continue
+        except UnboundLocalError:
+            print_log("Error: Local variable 'answer' referenced before assignment.")
+            print_log("Retrying...")
+            retry_count += 1
             continue
 
     unpivot_columns = answer["unpivot_columns"]
@@ -238,53 +333,53 @@ def self_refine(node: Node) -> Optional[Node]:
         except ValueError:
             return None
 
-    matching, reward = similarity_score(new_C)
+    matching, reward = similarity_score(new_C, without_description)
     child = Node(parent=node, Q=reward, reward=reward, C=new_C, matching=matching)
     child.N = 1
     node.children.append(child)
     return child
 
 
-def random_add(node: Node) -> Node:
+def random_add(node: Node, without_description: bool) -> Node:
     possible_additions = [i for i in range(len(g.source_attributes)) if i not in node.C]
     addition = random.choice(possible_additions)
     new_C = node.C.copy()
     new_C.append(addition)
-    matching, reward = similarity_score(new_C)
+    matching, reward = similarity_score(new_C, without_description)
     child = Node(parent=node, Q=reward, reward=reward, C=new_C, matching=matching)
     child.N = 1
     node.children.append(child)
     return child
 
 
-def random_remove(node: Node) -> Node:
+def random_remove(node: Node, without_description: bool) -> Node:
     removal = random.choice(list(node.C))
     new_C = node.C.copy()
     new_C.remove(removal)
-    matching, reward = similarity_score(new_C)
+    matching, reward = similarity_score(new_C, without_description)
     child = Node(parent=node, Q=reward, reward=reward, C=new_C, matching=matching)
     child.N = 1
     node.children.append(child)
     return child
 
 
-def random_swap(node: Node) -> Node:
+def random_swap(node: Node, without_description: bool) -> Node:
     removal = random.choice(list(node.C))
     possible_additions = [i for i in range(len(g.source_attributes)) if i not in node.C]
     addition = random.choice(possible_additions)
     new_C = node.C.copy()
     new_C.remove(removal)
     new_C.append(addition)
-    matching, reward = similarity_score(new_C)
+    matching, reward = similarity_score(new_C, without_description)
     child = Node(parent=node, Q=reward, reward=reward, C=new_C, matching=matching)
     child.N = 1
     node.children.append(child)
     return child
 
 
-def pick_unvisited(node: Node) -> Optional[Node]:
+def pick_unvisited(node: Node, without_description: bool) -> Optional[Node]:
     if random.random() > g.args.epsilon:
-        return self_refine(node)
+        return self_refine(node, without_description)
     else:
         possible_ops = []
         if len(node.C) < len(g.source_attributes):
@@ -294,11 +389,11 @@ def pick_unvisited(node: Node) -> Optional[Node]:
 
         op = random.choice(possible_ops)
         if op == "add":
-            return random_add(node)
+            return random_add(node, without_description)
         elif op == "remove":
-            return random_remove(node)
+            return random_remove(node, without_description)
         else:
-            return random_swap(node)
+            return random_swap(node, without_description)
 
 
 def backpropagate(node: Node) -> None:
@@ -312,23 +407,34 @@ def backpropagate(node: Node) -> None:
         node = node.parent
 
 
-def MCTS(root: Node) -> Node:
-    import concurrent.futures
+def MCTS(root: Node, without_description: bool) -> Node:
+    if not g.args.no_parallel:
+        import concurrent.futures
 
-    for _ in range(g.args.max_iteration):
-        futures = []
-        with concurrent.futures.ThreadPoolExecutor() as executor:
+        for _ in range(g.args.max_iteration):
+            futures = []
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                for _ in range(PARALLEL_NUM):
+                    node = traverse(root)
+                    node.N += 10
+                    node.children_num += 1
+                    futures.append(executor.submit(pick_unvisited, node, without_description))
+
+            for future in concurrent.futures.as_completed(futures):
+                leaf = future.result()
+                if leaf is not None:
+                    leaf.parent.N -= 10
+                    backpropagate(leaf)
+    else:
+        for _ in range(g.args.max_iteration):
             for _ in range(PARALLEL_NUM):
                 node = traverse(root)
                 node.N += 10
                 node.children_num += 1
-                futures.append(executor.submit(pick_unvisited, node))
-
-        for future in concurrent.futures.as_completed(futures):
-            leaf = future.result()
-            if leaf is not None:
-                leaf.parent.N -= 10
-                backpropagate(leaf)
+                leaf = pick_unvisited(node, without_description)
+                if leaf is not None:
+                    leaf.parent.N -= 10
+                    backpropagate(leaf)
 
     queue = [root]
     best = root

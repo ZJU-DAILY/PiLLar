@@ -1,6 +1,8 @@
 import time
 import json
 import random
+import re
+import concurrent.futures
 from typing import Dict, List, Tuple, FrozenSet
 
 import numpy as np
@@ -22,8 +24,222 @@ def JS_divergence(p, q):
     m = 0.5 * (p + q)
     return 0.5 * KL_divergence(p, m) + 0.5 * KL_divergence(q, m)
 
+LLM_MODES = {"llm_only", "llm_weight_only", "score_and_weight"}
 
-def distribution_similarity(s1, s2, v1, v2) -> float:
+prompt_similarity_llm_only = "Evaluate the similarity between the two given columns according to the source/target table \
+schema provided. The similarity score should be a float number between 0 and 1. Answer with only one final float \
+score, no any other character should be added.\n\
+### Column 1: {column1}\n\
+### Column 2: {column2}\n\
+### Sample data for column 1:\n#\n#{sample1}\n#\n\
+### Sample data for column 2:\n#\n#{sample2}\n#\n\
+### Source column names before unpivot:\n#\n{source_attributes_before}\n#\n\
+### Source column names after unpivot:\n#\n{source_attributes_after}\n#\n\
+### Target column names:\n#\n{target_attributes}\n#\n\
+### Similarity scores:\n#\n{scores}\n"
+
+prompt_similarity_llm_weight_only = "Evaluate the similarity between the two given columns by combining the provided dimensional \
+scores. The similarity score should be a float number between 0 and 1. Answer with only one final float score, \
+no any other character should be added.\n\
+### Column 1: {column1}\n\
+### Column 2: {column2}\n\
+### Sample data for column 1:\n#\n#{sample1}\n#\n\
+### Sample data for column 2:\n#\n#{sample2}\n#\n\
+### Source column names before unpivot:\n#\n{source_attributes_before}\n#\n\
+### Source column names after unpivot:\n#\n{source_attributes_after}\n#\n\
+### Target column names:\n#\n{target_attributes}\n#\n\
+### Similarity scores:\n#\n{scores}\n"
+
+prompt_similarity_llm_weight_only_unpivot = "Evaluate the similarity between the two given columns by combining the provided dimensional \
+scores. If the JS distribution similarity is provided, assign it a higher weight than the others. The similarity \
+score should be a float number between 0 and 1. Answer with only one final float score, no any other character \
+should be added.\n\
+### Column 1: {column1}\n\
+### Column 2: {column2}\n\
+### Sample data for column 1:\n#\n#{sample1}\n#\n\
+### Sample data for column 2:\n#\n#{sample2}\n#\n\
+### Source column names before unpivot:\n#\n{source_attributes_before}\n#\n\
+### Source column names after unpivot:\n#\n{source_attributes_after}\n#\n\
+### Target column names:\n#\n{target_attributes}\n#\n\
+### Similarity scores:\n#\n{scores}\n"
+
+prompt_similarity_score_and_weight = "Evaluate the similarity between the two given columns. The similarity score should be a \
+float number between 0 and 1. Answer with only one final float score, no any other character should be added. \
+Do it step by step:\n\
+1. Give a similarity score between the two attributes according to the source/target table schema provided.\n\
+2. Combine this score with other provided dimensional scores (0-1) using weighted averaging.\n\
+### Column 1: {column1}\n\
+### Column 2: {column2}\n\
+### Sample data for column 1:\n#\n#{sample1}\n#\n\
+### Sample data for column 2:\n#\n#{sample2}\n#\n\
+### Source column names before unpivot:\n#\n{source_attributes_before}\n#\n\
+### Source column names after unpivot:\n#\n{source_attributes_after}\n#\n\
+### Target column names:\n#\n{target_attributes}\n#\n\
+### Similarity scores:\n#\n{scores}\n"
+
+prompt_similarity_score_and_weight_unpivot = "Evaluate the similarity between the two given columns. The similarity score should be a \
+float number between 0 and 1. Answer with only one final float score, no any other character should be added. \
+Do it step by step:\n\
+1. Give a similarity score between the two attributes according to the source/target table schema provided.\n\
+2. Combine this score with other provided dimensional scores (0-1) using weighted averaging. If the JS distribution \
+similarity is provided, assign it a higher weight than the others.\n\
+### Column 1: {column1}\n\
+### Column 2: {column2}\n\
+### Sample data for column 1:\n#\n#{sample1}\n#\n\
+### Sample data for column 2:\n#\n#{sample2}\n#\n\
+### Source column names before unpivot:\n#\n{source_attributes_before}\n#\n\
+### Source column names after unpivot:\n#\n{source_attributes_after}\n#\n\
+### Target column names:\n#\n{target_attributes}\n#\n\
+### Similarity scores:\n#\n{scores}\n"
+
+similarity_definition = {
+    "edit_distance_similarity": "Normalized similarity based on edit distance between attribute names, i.e. the number of insertions, deletions, or substitutions required to change one string into the other",
+    "name_bert_similarity": "Cosine similarity between BERT embeddings for attribute names",
+    "description_bert_similarity": "Cosine similarity between BERT embeddings for attribute descriptions",
+    "JS_divergence_similarity": "Jensen-Shannon divergence similarity between distributions of sample values, it has been preprocessed to be a float number between 0 and 1, the bigger the value, the more similar the two distributions are",
+}
+
+def llm_combine(
+    s1: str,
+    s2: str,
+    scores: Dict[str, float],
+    v1,
+    v2,
+    prompt_strs: List[str],
+    mode: str,
+    is_unpivot: bool,
+) -> float:
+    cache_key = (mode, s1, s2, is_unpivot, prompt_strs[1])
+    if cache_key in g.similarity_cache:
+        return g.similarity_cache[cache_key]
+
+    scores_str = ""
+    for dimension, score in scores.items():
+        scores_str += (
+            "# "
+            + dimension
+            + ": "
+            + "{:.10f}".format(score)
+            + "\n"
+            + "# definition: "
+            + similarity_definition[dimension]
+            + "\n"
+        )
+
+    v1_str = "[" + ", ".join([str(x) for x in v1]) + "]"
+    v2_str = "[" + ", ".join([str(x) for x in v2]) + "]"
+
+    if mode == "llm_only":
+        prompt = prompt_similarity_llm_only.format(
+            column1=s1,
+            column2=s2,
+            sample1=v1_str,
+            sample2=v2_str,
+            source_attributes_before=prompt_strs[0],
+            source_attributes_after=prompt_strs[1],
+            target_attributes=prompt_strs[2],
+            scores=scores_str,
+        )
+    elif mode == "llm_weight_only":
+        if is_unpivot:
+            prompt = prompt_similarity_llm_weight_only_unpivot.format(
+                column1=s1,
+                column2=s2,
+                sample1=v1_str,
+                sample2=v2_str,
+                source_attributes_before=prompt_strs[0],
+                source_attributes_after=prompt_strs[1],
+                target_attributes=prompt_strs[2],
+                scores=scores_str,
+            )
+        else:
+            prompt = prompt_similarity_llm_weight_only.format(
+                column1=s1,
+                column2=s2,
+                sample1=v1_str,
+                sample2=v2_str,
+                source_attributes_before=prompt_strs[0],
+                source_attributes_after=prompt_strs[1],
+                target_attributes=prompt_strs[2],
+                scores=scores_str,
+            )
+    elif mode == "score_and_weight":
+        if is_unpivot:
+            prompt = prompt_similarity_score_and_weight_unpivot.format(
+                column1=s1,
+                column2=s2,
+                sample1=v1_str,
+                sample2=v2_str,
+                source_attributes_before=prompt_strs[0],
+                source_attributes_after=prompt_strs[1],
+                target_attributes=prompt_strs[2],
+                scores=scores_str,
+            )
+        else:
+            prompt = prompt_similarity_score_and_weight.format(
+                column1=s1,
+                column2=s2,
+                sample1=v1_str,
+                sample2=v2_str,
+                source_attributes_before=prompt_strs[0],
+                source_attributes_after=prompt_strs[1],
+                target_attributes=prompt_strs[2],
+                scores=scores_str,
+            )
+    else:
+        return 0.0
+
+    futures = []
+    scores_list: List[float] = []
+    query_time = time.time()
+    max_create_time = 0
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        for _ in range(3):
+            futures.append(
+                executor.submit(
+                    completion_create,
+                    model=g.args.model,
+                    messages=[
+                        {
+                            "role": "system",
+                            "content": "You are now an expert in data governance and schema matching.",
+                        },
+                        {"role": "user", "content": prompt},
+                    ],
+                    extra_body={"enable_thinking": False},
+                    Stream=True,
+                )
+            )
+        for future in concurrent.futures.as_completed(futures):
+            _, response, create_time = future.result()
+            max_create_time = max(max_create_time, create_time)
+            try:
+                response_score = float(re.findall(r"[-+]?\d*\.\d+|\d+", response)[0])
+                scores_list.append(response_score)
+            except Exception:
+                print_log(
+                    "Error: Invalid response format. Response content: " + response
+                )
+
+    if len(scores_list) == 0:
+        score = 0.0
+    else:
+        score = sum(scores_list) / len(scores_list)
+
+    g.total_time_wasted += max_create_time - query_time
+    g.similarity_cache[cache_key] = score
+    return score
+
+
+def distribution_similarity(
+    s1,
+    s2,
+    v1,
+    v2,
+    prompt_strs: List[str],
+    mode: str,
+    is_unpivot: bool,
+) -> float:
     scores: Dict[str, float] = {}
 
     scores["edit_distance_similarity"] = td.levenshtein.normalized_similarity(s1, s2)
@@ -47,19 +263,30 @@ def distribution_similarity(s1, s2, v1, v2) -> float:
             bins = np.linspace(min_value, max_value, bin_num + 1)
             prob1 = np.histogram(v1, bins=bins, density=True)[0]
             prob2 = np.histogram(v2, bins=bins, density=True)[0]
-            scores["JS_divergence_similarity"] = 1 - JS_divergence(prob1, prob2)
+        scores["JS_divergence_similarity"] = 1 - JS_divergence(prob1, prob2)
     except Exception:
         print_log(
             f"Error: Invalid values for distribution similarity calculation. "
             f"Error with s1: {s1}, s2: {s2}"
         )
 
+    if mode in LLM_MODES:
+        return llm_combine(s1, s2, scores, v1, v2, prompt_strs, mode, is_unpivot)
+
     score_sum = sum(scores.values())
     score_cnt = len(scores)
     return score_sum / max(score_cnt, 1)
 
 
-def string_similarity(s1, s2) -> float:
+def string_similarity(
+    s1,
+    s2,
+    v1,
+    v2,
+    prompt_strs: List[str],
+    mode: str,
+    is_unpivot: bool,
+) -> float:
     scores: Dict[str, float] = {}
     scores["edit_distance_similarity"] = td.levenshtein.normalized_similarity(s1, s2)
 
@@ -70,6 +297,9 @@ def string_similarity(s1, s2) -> float:
             [g.model.encode(s1)], [g.model.encode(s2)]
         )[0][0]
         g.bert_similarity_cache[(s1, s2)] = scores["name_bert_similarity"]
+
+    if mode in LLM_MODES:
+        return llm_combine(s1, s2, scores, v1, v2, prompt_strs, mode, is_unpivot)
 
     score_sum = sum(scores.values())
     score_cnt = len(scores)
@@ -86,26 +316,40 @@ contains the values. Your answer should be pure text rather than a code block.\n
 ### Descriptions:\n#\n{description}#\n\
 ### Target attributes:\n#\n{target_attributes}\n'
 
+prompt_ner_without_description = 'Given the attribute subset for unpivot from a source table and the target attributes, please \
+identify the column names that will be generated after unpivot, as well as their column description. Please \
+answer in JSON string format {{"column_attribute": {{"name": "xxx", "description": "xxx"}}, "column_value":\
+ {{"name": "xxx", "description": "xxx"}}}}, where "column_attribute" refers to the column that \
+contains the attributes from source table after unpivot, and "column_value" refers to the column that \
+contains the values. Your answer should be pure text rather than a code block.\n\
+### Values:\n#\n{subset}\n#\n\
+### Target attributes:\n#\n{target_attributes}\n'
 
-def query_ner(C: List[int]) -> Tuple[str, str]:
+def query_ner(C: List[int], without_description: bool) -> Tuple[str, str]:
     unpivot_subset = [g.source_attributes[i] for i in C]
     prompt_subset = "# " + "\n# ".join(unpivot_subset)
     prompt_target = "# " + "\n# ".join(g.target_attributes)
 
-    prompt_description = ""
-    for attribute in unpivot_subset:
-        prompt_description += (
-            "# " + attribute + ": " + g.column_explanations[attribute] + "\n"
+    if not without_description:
+        prompt_description = ""
+        for attribute in unpivot_subset:
+            prompt_description += (
+                "# " + attribute + ": " + g.column_explanations[attribute] + "\n"
+            )
+
+        prompt = prompt_ner.format(
+            subset=prompt_subset,
+            description=prompt_description,
+            target_attributes=prompt_target,
+        )
+    else:
+        prompt = prompt_ner_without_description.format(
+            subset=prompt_subset,
+            target_attributes=prompt_target,
         )
 
-    prompt = prompt_ner.format(
-        subset=prompt_subset,
-        description=prompt_description,
-        target_attributes=prompt_target,
-    )
-
-    get_response = False
-    while not get_response:
+    retry_count = 0
+    while retry_count < 3:
         query_time = time.time()
         _, response, create_time = completion_create(
             model=g.args.model,
@@ -119,24 +363,25 @@ def query_ner(C: List[int]) -> Tuple[str, str]:
             extra_body={"enable_thinking": False},
             Stream=True,
         )
-        get_response = True
         g.total_time_wasted += create_time - query_time
         try:
             answer = json.loads(response)
+            retry_count = 3
         except json.JSONDecodeError:
             print_log(
                 "Error: Invalid JSON format in response. Response content: " + response
             )
             print_log("Retrying...")
-            get_response = False
-            continue
+            retry_count += 1
 
     column_attribute_name = answer["column_attribute"]["name"]
     column_value_name = answer["column_value"]["name"]
     return column_attribute_name, column_value_name
 
 
-def similarity_score(C: List[int]) -> Tuple[Dict[str, FrozenSet[str]], float]:
+def similarity_score(
+    C: List[int], without_description: bool
+) -> Tuple[Dict[str, FrozenSet[str]], float]:
     frozen = frozenset(C)
     if frozen in g.similarity_sum_cache:
         return g.similarity_sum_cache[frozen]
@@ -153,11 +398,11 @@ def similarity_score(C: List[int]) -> Tuple[Dict[str, FrozenSet[str]], float]:
 
     unpivot_subset = [g.source_attributes[i] for i in C]
 
-    for a in unpivot_subset:
-        for b in unpivot_subset:
-            if g.source_types[a] != g.source_types[b]:
-                g.calculating.pop(frozen, None)
-                return {}, 0.0
+    # for a in unpivot_subset:
+    #     for b in unpivot_subset:
+    #         if g.source_types[a] != g.source_types[b]:
+    #             g.calculating.pop(frozen, None)
+    #             return {}, 0.0
 
     source_attributes_unpivot = [
         g.source_attributes[i] for i in range(len(g.source_attributes)) if i not in C
@@ -183,14 +428,23 @@ def similarity_score(C: List[int]) -> Tuple[Dict[str, FrozenSet[str]], float]:
     column_value_name = ""
 
     if len(C) != 0:
-        column_attribute_name, column_value_name = query_ner(C)
+        column_attribute_name, column_value_name = query_ner(C, without_description)
         source_attributes_unpivot.append(column_attribute_name)
         source_attributes_unpivot.append(column_value_name)
+
+    prompt_strs = [
+        "# " + "\n# ".join(g.source_attributes),
+        "# " + "\n# ".join(source_attributes_unpivot),
+        "# " + "\n# ".join(g.target_attributes),
+    ]
 
     n = len(source_attributes_unpivot)
     m = len(g.target_attributes)
 
     similarity_matrix = [[0.0 for _ in range(n)] for _ in range(m)]
+    mode = g.args.mode
+    if mode not in LLM_MODES:
+        mode = "average"
 
     for i in range(m):
         t_attr = g.target_attributes[i]
@@ -200,6 +454,11 @@ def similarity_score(C: List[int]) -> Tuple[Dict[str, FrozenSet[str]], float]:
                     similarity_matrix[i][j] = string_similarity(
                         t_attr,
                         source_attributes_unpivot[j],
+                        g.df_target[t_attr].values,
+                        attributes,
+                        prompt_strs,
+                        mode,
+                        True,
                     )
                     continue
                 elif j == n - 1:
@@ -212,11 +471,19 @@ def similarity_score(C: List[int]) -> Tuple[Dict[str, FrozenSet[str]], float]:
                                 source_attributes_unpivot[j],
                                 g.df_target[t_attr].values,
                                 combined,
+                                prompt_strs,
+                                mode,
+                                True,
                             )
                         else:
                             similarity_matrix[i][j] = string_similarity(
                                 t_attr,
                                 source_attributes_unpivot[j],
+                                g.df_target[t_attr].values,
+                                combined,
+                                prompt_strs,
+                                mode,
+                                True,
                             )
                     continue
 
@@ -230,11 +497,19 @@ def similarity_score(C: List[int]) -> Tuple[Dict[str, FrozenSet[str]], float]:
                         s_attr,
                         g.df_target[t_attr].values,
                         g.df_source[s_attr].values,
+                        prompt_strs,
+                        mode,
+                        False,
                     )
                 else:
                     similarity_matrix[i][j] = string_similarity(
                         t_attr,
                         s_attr,
+                        g.df_target[t_attr].values,
+                        g.df_source[s_attr].values,
+                        prompt_strs,
+                        mode,
+                        False,
                     )
 
     threshold_min = 0.2
